@@ -1,12 +1,12 @@
-name: Scrape Microsoft Fabric Status
+name: Scrape Microsoft Fabric Status Screenshot
 
 on:
   schedule:
-    - cron: '0 * * * *'
-  workflow_dispatch:
+    - cron: '0 * * * *'  # Every hour
+  workflow_dispatch:       # Allow manual run
 
 permissions:
-  contents: write
+  contents: write  # Required for pushing commits
 
 jobs:
   scrape:
@@ -26,16 +26,16 @@ jobs:
           pip install pandas playwright
           playwright install chromium
 
-      - name: Run scraper
+      - name: Run screenshot scraper
         run: python scrape_fabric_status.py
 
-      - name: Commit and push CSV file
+      - name: Commit and push screenshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add fabric_status/*.csv
-          git commit -m "Add new Fabric status snapshot [skip ci]" || echo "No changes to commit"
+          git add fabric_status/*.png
+          git commit -m "Add Fabric status screenshot [skip ci]" || echo "No changes to commit"
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
           git push
