@@ -2,6 +2,7 @@ import asyncio
 from playwright.async_api import async_playwright
 import pandas as pd
 from datetime import datetime
+import os
 
 async def run():
     async with async_playwright() as p:
@@ -19,8 +20,14 @@ async def run():
         await browser.close()
 
         df = pd.DataFrame(data[1:], columns=data[0])
+
+        # Ensure the folder exists
+        os.makedirs("fabric_status", exist_ok=True)
+
+        # Save CSV in the folder
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        df.to_csv(f"fabric_status_{timestamp}.csv", index=False)
-        print(f"Saved: fabric_status_{timestamp}.csv")
+        filepath = f"fabric_status/fabric_status_{timestamp}.csv"
+        df.to_csv(filepath, index=False)
+        print(f"Saved: {filepath}")
 
 asyncio.run(run())
