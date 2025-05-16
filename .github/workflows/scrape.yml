@@ -2,8 +2,11 @@ name: Scrape Microsoft Fabric Status
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every hour on the hour
+    - cron: '0 * * * *'  # Every hour
   workflow_dispatch:       # Allow manual run
+
+permissions:
+  contents: write  # Required for committing to the repo
 
 jobs:
   scrape:
