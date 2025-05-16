@@ -2,11 +2,11 @@ name: Scrape Microsoft Fabric Status
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every hour
-  workflow_dispatch:       # Allow manual run
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 permissions:
-  contents: write  # Required for committing to the repo
+  contents: write
 
 jobs:
   scrape:
@@ -35,7 +35,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add *.csv
+          git add fabric_status/*.csv
           git commit -m "Add new Fabric status snapshot [skip ci]" || echo "No changes to commit"
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
           git push
