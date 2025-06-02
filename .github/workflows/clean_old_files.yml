@@ -2,8 +2,8 @@ name: Cleanup Old Screenshots
 
 on:
   schedule:
-    - cron: "0 5 * * *"  # Runs daily at 5:00 UTC
-  workflow_dispatch:     # Allows manual run
+    - cron: "0 5 * * *"  # Every day at 5:00 UTC
+  workflow_dispatch:
 
 jobs:
   cleanup:
@@ -12,17 +12,37 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      - name: Delete files older than 7 days
+      - name: Delete files older than 7 days based on filename
         run: |
-          find fabric_status -type f -name '*.png' -mtime +7 -print -delete
+          import os
+          from datetime import datetime, timedelta
+
+          folder = "fabric_status"
+          cutoff_date = datetime.now() - timedelta(days=7)
+
+          deleted = False
+          for file in os.listdir(folder):
+              if file.startswith("fabric_status_") and file.endswith(".png"):
+                  date_str = file[len("fabric_status_"):-4]  # remove prefix and .png
+                  try:
+                      file_dt = datetime.strptime(date_str, "%Y%m%d_%H%M")
+                      if file_dt < cutoff_date:
+                          os.remove(os.path.join(folder, file))
+                          print(f"Deleted: {file}")
+                          deleted = True
+                  except ValueError:
+                      print(f"Skipping file with unexpected format: {file}")
+
+          if not deleted:
+              print("No files deleted.")
+
+        shell: python
 
       - name: Commit and push if changes
         run: |
@@ -30,8 +50,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if [[ `git status --porcelain` ]]; then
             git add fabric_status
-            git commit -m "Delete screenshots older than 7 days"
+            git commit -m "Auto-cleanup: remove screenshots older than 7 days"
             git push
           else
-            echo "No old files to delete."
-          fi
+            echo "No changes to commit."
