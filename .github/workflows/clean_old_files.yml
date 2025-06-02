@@ -18,12 +18,15 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Delete old PNG files from fabric_status folder
+      - name: Delete old PNG files based on filename
         run: |
           import os
           from datetime import datetime, timedelta
 
-          folder = "scrap_fab_status/fabric_status"
+          folder = "fabric_status"
+          if not os.path.exists(folder):
+              raise FileNotFoundError(f"Folder not found: {folder}")
+
           cutoff = datetime.now() - timedelta(days=7)
           deleted_files = []
 
@@ -54,7 +57,7 @@ jobs:
           CHANGES=$(git status --porcelain)
 
           if [ ! -z "$CHANGES" ]; then
-            git add scrap_fab_status/fabric_status
+            git add fabric_status
             git commit -m "Auto-cleanup: delete PNGs older than 7 days from fabric_status"
             git push
           else
