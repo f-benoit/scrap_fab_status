@@ -3,8 +3,8 @@ from playwright.async_api import async_playwright
 from datetime import datetime, timedelta
 import os
 
-# Delete screenshots older than 21 days
-def clean_old_files(folder: str, days: int = 21):
+# Delete screenshots older than 7 days
+def clean_old_files(folder: str, days: int = 7):
     cutoff = datetime.now() - timedelta(days=days)
     if os.path.exists(folder):
         for filename in os.listdir(folder):
