@@ -2,10 +2,12 @@ import asyncio
 from playwright.async_api import async_playwright
 from datetime import datetime, timedelta
 import os
+import subprocess
 
-# Delete screenshots older than 7 days
-def clean_old_files(folder: str, days: int = 7):
+def clean_old_files_and_git_commit(folder: str, days: int = 7):
     cutoff = datetime.now() - timedelta(days=days)
+    deleted_files = []
+
     if os.path.exists(folder):
         for filename in os.listdir(folder):
             file_path = os.path.join(folder, filename)
@@ -14,11 +16,22 @@ def clean_old_files(folder: str, days: int = 7):
                 if file_mtime < cutoff:
                     os.remove(file_path)
                     print(f"Deleted old file: {file_path}")
+                    deleted_files.append(file_path)
+
+    # Git remove and commit
+    if deleted_files:
+        try:
+            subprocess.run(["git", "rm"] + deleted_files, check=True)
+            subprocess.run(["git", "commit", "-m", f"Remove screenshots older than {days} days"], check=True)
+            subprocess.run(["git", "push"], check=True)
+            print(f"Committed and pushed deletion of {len(deleted_files)} file(s).")
+        except subprocess.CalledProcessError as e:
+            print(f"Git command failed: {e}")
 
 async def run():
     folder = "fabric_status"
     os.makedirs(folder, exist_ok=True)
-    clean_old_files(folder)
+    clean_old_files_and_git_commit(folder)
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -26,8 +39,6 @@ async def run():
 
         print("Navigating to Microsoft Fabric Support page...")
         await page.goto("https://support.fabric.microsoft.com/en-gb/support/", timeout=60000)
-
-        # Wait 5 seconds to ensure all dynamic content loads
         await page.wait_for_timeout(5000)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
