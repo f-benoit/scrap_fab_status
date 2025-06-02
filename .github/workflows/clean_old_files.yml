@@ -2,7 +2,7 @@ name: Cleanup Old Screenshots
 
 on:
   schedule:
-    - cron: "0 5 * * *"  # Every day at 5:00 UTC
+    - cron: "0 5 * * *"  # Daily at 05:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
           deleted = False
           for file in os.listdir(folder):
               if file.startswith("fabric_status_") and file.endswith(".png"):
-                  date_str = file[len("fabric_status_"):-4]  # remove prefix and .png
+                  date_str = file[len("fabric_status_"):-4]
                   try:
                       file_dt = datetime.strptime(date_str, "%Y%m%d_%H%M")
                       if file_dt < cutoff_date:
@@ -37,18 +37,17 @@ jobs:
                           print(f"Deleted: {file}")
                           deleted = True
                   except ValueError:
-                      print(f"Skipping file with unexpected format: {file}")
+                      print(f"Skipping invalid file: {file}")
 
           if not deleted:
               print("No files deleted.")
-
         shell: python
 
       - name: Commit and push if changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [[ `git status --porcelain` ]]; then
+          if [[ $(git status --porcelain) ]]; then
             git add fabric_status
             git commit -m "Auto-cleanup: remove screenshots older than 7 days"
             git push
