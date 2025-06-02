@@ -2,7 +2,7 @@ name: Cleanup Old Screenshots
 
 on:
   schedule:
-    - cron: "0 5 * * *"  # Daily at 05:00 UTC
+    - cron: "0 5 * * *"  # Runs daily at 05:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -47,9 +47,13 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [[ $(git status --porcelain) ]]; then
+
+          CHANGES=$(git status --porcelain)
+
+          if [ ! -z "$CHANGES" ]; then
             git add fabric_status
             git commit -m "Auto-cleanup: remove screenshots older than 7 days"
             git push
           else
             echo "No changes to commit."
+          fi
