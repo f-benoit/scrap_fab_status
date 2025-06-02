@@ -1,8 +1,8 @@
-name: Cleanup Old CSVs
+name: Cleanup Old Fabric Status PNGs
 
 on:
   schedule:
-    - cron: "0 5 * * *"  # Every day at 05:00 UTC
+    - cron: "0 5 * * *"  # Daily at 05:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -18,22 +18,20 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Delete old CSV files based on filename
+      - name: Delete old PNG files from fabric_status folder
         run: |
           import os
           from datetime import datetime, timedelta
 
-          folder = "fabric_status"
+          folder = "scrap_fab_status/fabric_status"
           cutoff = datetime.now() - timedelta(days=7)
           deleted_files = []
 
           for file in os.listdir(folder):
-              if file.startswith("fabric_status_") and file.endswith(".csv"):
+              if file.startswith("fabric_status_") and file.endswith(".png"):
                   try:
-                      # Extract timestamp from filename
-                      timestamp_str = file[len("fabric_status_"):-4]  # remove prefix and .csv
-                      file_date = datetime.strptime(timestamp_str, "%Y%m%d_%H%M")
-
+                      timestamp = file[len("fabric_status_"):-4]  # remove prefix and .png
+                      file_date = datetime.strptime(timestamp, "%Y%m%d_%H%M")
                       if file_date < cutoff:
                           os.remove(os.path.join(folder, file))
                           deleted_files.append(file)
@@ -41,14 +39,14 @@ jobs:
                       print(f"Skipping {file} due to error: {e}")
 
           if deleted_files:
-              print(f"Deleted {len(deleted_files)} files:")
+              print("Deleted files:")
               for f in deleted_files:
                   print(f" - {f}")
           else:
-              print("No old files found.")
+              print("No files deleted.")
         shell: python
 
-      - name: Commit and push if changes
+      - name: Commit and push deleted files if any
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -56,8 +54,8 @@ jobs:
           CHANGES=$(git status --porcelain)
 
           if [ ! -z "$CHANGES" ]; then
-            git add fabric_status
-            git commit -m "Auto-cleanup: delete CSVs older than 7 days"
+            git add scrap_fab_status/fabric_status
+            git commit -m "Auto-cleanup: delete PNGs older than 7 days from fabric_status"
             git push
           else
             echo "No changes to commit."
