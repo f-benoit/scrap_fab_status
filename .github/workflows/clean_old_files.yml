@@ -1,0 +1,37 @@
+name: Cleanup Old Screenshots
+
+on:
+  schedule:
+    - cron: "0 5 * * *"  # Runs daily at 5:00 UTC
+  workflow_dispatch:     # Allows manual run
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Delete files older than 7 days
+        run: |
+          find fabric_status -type f -name '*.png' -mtime +7 -print -delete
+
+      - name: Commit and push if changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [[ `git status --porcelain` ]]; then
+            git add fabric_status
+            git commit -m "Delete screenshots older than 7 days"
+            git push
+          else
+            echo "No old files to delete."
+          fi
