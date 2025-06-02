@@ -1,8 +1,8 @@
-name: Cleanup Old Screenshots
+name: Cleanup Old CSVs
 
 on:
   schedule:
-    - cron: "0 5 * * *"  # Runs daily at 05:00 UTC
+    - cron: "0 5 * * *"  # Every day at 05:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -18,29 +18,34 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Delete files older than 7 days based on filename
+      - name: Delete old CSV files based on filename
         run: |
           import os
           from datetime import datetime, timedelta
 
           folder = "fabric_status"
-          cutoff_date = datetime.now() - timedelta(days=7)
+          cutoff = datetime.now() - timedelta(days=7)
+          deleted_files = []
 
-          deleted = False
           for file in os.listdir(folder):
-              if file.startswith("fabric_status_") and file.endswith(".png"):
-                  date_str = file[len("fabric_status_"):-4]
+              if file.startswith("fabric_status_") and file.endswith(".csv"):
                   try:
-                      file_dt = datetime.strptime(date_str, "%Y%m%d_%H%M")
-                      if file_dt < cutoff_date:
-                          os.remove(os.path.join(folder, file))
-                          print(f"Deleted: {file}")
-                          deleted = True
-                  except ValueError:
-                      print(f"Skipping invalid file: {file}")
+                      # Extract timestamp from filename
+                      timestamp_str = file[len("fabric_status_"):-4]  # remove prefix and .csv
+                      file_date = datetime.strptime(timestamp_str, "%Y%m%d_%H%M")
 
-          if not deleted:
-              print("No files deleted.")
+                      if file_date < cutoff:
+                          os.remove(os.path.join(folder, file))
+                          deleted_files.append(file)
+                  except Exception as e:
+                      print(f"Skipping {file} due to error: {e}")
+
+          if deleted_files:
+              print(f"Deleted {len(deleted_files)} files:")
+              for f in deleted_files:
+                  print(f" - {f}")
+          else:
+              print("No old files found.")
         shell: python
 
       - name: Commit and push if changes
@@ -52,7 +57,7 @@ jobs:
 
           if [ ! -z "$CHANGES" ]; then
             git add fabric_status
-            git commit -m "Auto-cleanup: remove screenshots older than 7 days"
+            git commit -m "Auto-cleanup: delete CSVs older than 7 days"
             git push
           else
             echo "No changes to commit."
