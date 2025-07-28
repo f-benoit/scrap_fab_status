@@ -38,7 +38,7 @@ async def run():
         page = await browser.new_page()
 
         print("Navigating to Microsoft Fabric Support page...")
-        await page.goto("https://support.fabric.microsoft.com/en-gb/support/", timeout=60000)
+        await page.goto("https://support.fabric.microsoft.com/support/", timeout=60000)
         await page.wait_for_timeout(5000)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
